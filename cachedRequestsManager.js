@@ -48,13 +48,7 @@ export default class CachedRequestsManager {
     }
     static clear(url) {
         if (url != "") {
-            let indexToDelete = [];
-            let index = 0;
-            for (let cache of requestsCaches) {
-                if (cache.url == url) indexToDelete.push(index);
-                index++;
-            }
-            utilities.deleteByIndex(requestsCaches, indexToDelete);
+            repositoryCaches = repositoryCaches.filter( cache => cache.url != url)
         }
     } 
     static flushExpired() {

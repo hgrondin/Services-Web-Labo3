@@ -31,13 +31,7 @@ export default class RepositoryCachesManager {
     }
     static clear(model) {
         if (model != "") {
-            let indexToDelete = [];
-            let index = 0;
-            for (let cache of repositoryCaches) {
-                if (cache.model == model) indexToDelete.push(index);
-                index++;
-            }
-            utilities.deleteByIndex(repositoryCaches, indexToDelete);
+            repositoryCaches = repositoryCaches.filter( cache => cache.model != model)
         }
     }
     static find(model) {
