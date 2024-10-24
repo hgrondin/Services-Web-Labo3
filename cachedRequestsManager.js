@@ -1,5 +1,6 @@
 import * as utilities from "./utilities.js";
 import * as serverVariables from "./serverVariables.js";
+import Repository from "./models/repository.js";
 
 let requestsCachesExpirationTime = serverVariables.get("main.requests.CacheExpirationTime");
 
@@ -10,7 +11,7 @@ export default class CachedRequestsManager {
     static startCachedRequestsleaner() {
         // periodic cleaning of expired cached repository data
         setInterval(CachedRequestsManager.flushExpired, requestsCachesExpirationTime * 1000);
-        console.log(BgWhite + FgBlue, "[Periodic repositories data caches cleaning process started...]");
+        console.log(BgWhite + FgRed, "[Periodic repositories data caches cleaning process started...]");
 
     }
     static add(url, data, ETag = "") {
@@ -26,7 +27,7 @@ export default class CachedRequestsManager {
                 ETag,
                 Expire_Time: utilities.nowInSeconds() + requestsCachesExpirationTime
             });
-            console.log(BgWhite + FgBlue, `[Data of ${url} has been cached]`);
+            console.log(BgWhite + FgRed, `[Data of ${url} has been cached]`);
         }
     }
     static find(url) {
@@ -34,9 +35,6 @@ export default class CachedRequestsManager {
             if (url != "") {
                 for (let cache of requestsCaches) {
                     if (cache.url == url) {
-                        // renew cache
-                        cache.Expire_Time = utilities.nowInSeconds() + requestsCachesExpirationTime;
-                        console.log(BgWhite + FgBlue, `[${cache.url} data retrieved from cache and renewed]`);
                         return cache;
                     }
                 }
@@ -55,7 +53,7 @@ export default class CachedRequestsManager {
         let now = utilities.nowInSeconds();
         for (let cache of requestsCaches) {
             if (cache.Expire_Time <= now) {
-                console.log(BgWhite + FgBlue, "Cached data of " + cache.url + " expired");
+                console.log(BgWhite + FgRed, "Cached data of " + cache.url + " expired");
             }
         }
         requestsCaches = requestsCaches.filter( cache => cache.Expire_Time > now);
@@ -63,7 +61,11 @@ export default class CachedRequestsManager {
     static get(HttpContext){
         let cache = CachedRequestsManager.find(HttpContext.req.url);
 
-        if (cache != null){
+        if (cache != null && cache.ETag == Repository.getETag(HttpContext.path.model)){ //Cache existante et ETag pareil
+            // renew cache
+            cache.Expire_Time = utilities.nowInSeconds() + requestsCachesExpirationTime;
+            console.log(BgWhite + FgRed, `[${cache.url} data retrieved from cache and renewed]`);
+
             HttpContext.response.JSON( cache.data, cache.ETag, true /* from cache */)
             return true;
         }
